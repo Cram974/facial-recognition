@@ -1,0 +1,404 @@
+<!doctype html>
+<html lang="en">
+
+    <head>
+        <meta charset="utf-8">
+
+        <title>Reconnaissance Faciale</title>
+
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+        <link rel="stylesheet" href="css/reveal.min.css">
+        <link rel="stylesheet" href="css/theme/default.css" id="theme">
+
+        <!-- For syntax highlighting -->
+        <link rel="stylesheet" href="lib/css/zenburn.css">
+
+        <!-- If the query includes 'print-pdf', include the PDF print sheet -->
+        <script>
+            if( window.location.search.match( /print-pdf/gi ) ) {
+                var link = document.createElement( 'link' );
+                link.rel = 'stylesheet';
+                link.type = 'text/css';
+                link.href = 'css/print/pdf.css';
+                document.getElementsByTagName( 'head' )[0].appendChild( link );
+            }
+        </script>
+    </head>
+
+    <body>
+
+        <div class="reveal">
+
+            <!-- Any section element inside of this container is displayed as a slide -->
+            <div class="slides">
+                <section>
+                    <h1>Reconnaissance Faciale</h1>
+                    <h3>avec R</h3>
+                    <p>
+                        <small>Créé par <a href="http://github.com/Cram974">Marc DIJOUX</a> / <span href="http://twitter.com/hakimel">30005167</span></small>
+                    </p>
+                </section>
+
+                <section>
+                    <h2>Objectif</h2>
+                    <p>Nous souahaitons réaliser une reconnaissance faciale via un programme.</p>
+                </section>
+
+                <section>
+                    <h2>Problème 1</h2>
+                    <p>
+                        Mise en oeuvre de la technique de reconnaissance faciale décrite dans “computerVision.pdf".
+                        Techniques: ACP + EUCLIDE
+                    </p>
+                </section>
+
+                <section>
+                    <h2>Algorithme</h2>
+                    <ol>
+                        <li class="fragment">Préparer les données</li>
+                        <li class="fragment">Estimer le nombre d'axes</li>
+                        <li class="fragment">Réaliser l'ACP</li>
+                        <li class="fragment">Proceder à la reconnaissance</li>
+                    </ol>
+                </section>
+
+                <section>
+                    <h2>Estimation du nombre d'axes</h2>
+                    <p>
+                        On cherche a estimer le nombre d'axe à garder pour notre ACP en minimisant l'erreur (déformation)
+                        introduite par la réduction de dimension.
+                    </p>
+                </section>
+                <section>
+                    <h2>Estimation du nombre d'axes</h2>
+                    <h5>Generalized Cross Validation approximation</h5>
+                    <pre><code data-trim contenteditable style="font-size: 18px; margin-top: 20px;">
+> e1 = estim_ncp(in_data, ncp.min = 0, ncp.max = NULL, 
++ scale = TRUE, method = "GCV")
+
+$ncp
+[1] 7
+
+$criterion
+[1] 1.0000000 0.9004591 0.7645654 0.7110463 0.6688959 0.6184872 0.6067041
+[8] 0.5991855 0.6057972 0.6272047 0.6490426 0.6926888 0.7492821 0.8351705
+[15] 0.9413408 1.0851445 1.2726258 1.8292360 3.4097302
+</code></pre>
+                </section>
+                <section>
+                    <h2>Estimation du nombre d'axes</h2>
+                    <h5>Smoothing Method</h5>
+                    <pre><code data-trim contenteditable style="font-size: 18px; margin-top: 20px;">
+> e2 = estim_ncp(in_data, ncp.min = 0, ncp.max = NULL, 
++ scale = TRUE, method = "Smooth")
+
+$ncp
+[1] 6
+
+$criterion
+[1]   1.0000000   0.8985034   0.7714947   0.7203897   0.7084561   0.6587284
+[7]   0.6577382   0.6672878   0.6919864   0.7194343   0.7807044   0.9418529
+[13]   1.1860181   1.5839509   2.1282022   5.2259658  28.8421412  83.0410524
+[19] 726.6507414
+</code></pre>
+                </section>
+
+                <section>
+                    <h2>Estimation du nombre d'axes</h2>
+                    <p class="image">
+                        <img height="450" src="img/plot-p1/plot-p1-page-001.jpg">
+                    </p>
+                    <h5>Probleme 1: Pourcentage Inertie</h5>
+                </section>
+
+                <section>
+                    <h2>Estimation du nombre d'axes</h2>
+                    <pre><code data-trim contenteditable style="font-size: 18px; margin-top: 20px;">
+> res$eig[,3]
+[1]  24.09230  42.16678  52.23322  61.40776  68.51224  73.78959  78.13419
+[8]  81.51782  84.29818  86.77607  89.13683  91.19778  92.93348  94.50083
+[15]  95.98052  97.30269  98.29278  99.17298 100.00000
+</code></pre>
+                    <h5>Probleme 1: Pourcentage Inertie Cumulée</h5>
+                </section>
+
+                <section>
+                    <h2>Réalisation de l'ACP</h2>
+                    <br/>
+                    <h4>Implémentation</h4>
+                    <pre><code data-trim contenteditable style="font-size: 18px; margin-top: 20px;">
+res = PCA(data, ind.sup=ind_sup, scale.unit=FALSE, ncp=e1$ncp, graph=F)
+</code></pre>
+                </section>
+
+                <section>
+                    <h3>Procedure de reconnaissance faciale</h3>
+                </section>
+
+                <section>
+                    <h3>Algorithme</h3>
+                    <ol>
+                        <li class="fragment">Trouver le plan optimal</li>
+                        <li class="fragment">Projeter les individu dans le plan</li>
+                        <li class="fragment">Calculer les distances entre individus</li>
+                        <li class="fragment">Isoler l'individu le moins distant</li>
+                    </ol>
+                </section>
+
+                <section>
+                    <h2>Détermination du plan optimal</h2>
+                    <p>
+                        Le Plan optimal est le plan qui représente le mieux un individu.
+                        Autrement dit, c'est le plan qui déforme le moin possible l'individu. 
+                        <br/><br/>
+                        Astuce: cos2
+                    </p>
+                </section>
+                <section>
+                    <h2>Détermination du plan optimal</h2>
+                    <br/>
+                    <pre><code data-trim contenteditable style="font-size: 18px; margin-top: 20px;">                
+> res$ind.sup$cos2   
+Dim.1      Dim.2       Dim.3        Dim.4      Dim.5        Dim.6
+110.pgm 0.052315084 0.04144988 0.001829622 1.742049e-01 0.10210146 3.297792e-03
+19.pgm  0.058487489 0.14623189 0.032510711 1.070719e-01 0.05431045 3.817835e-03
+210.pgm 0.060494227 0.18700918 0.031763541 2.232197e-03 0.01955733 2.711389e-05
+29.pgm  0.001959811 0.29168513 0.016353400 8.370480e-06 0.00599020 1.663334e-02
+310.pgm 0.204243590 0.06582713 0.016227922 1.268981e-01 0.05773250 2.801627e-02
+39.pgm  0.230484058 0.06544861 0.016271481 5.667482e-02 0.11067633 7.207885e-03
+Dim.7
+110.pgm 1.850748e-02
+19.pgm  1.475802e-06
+210.pgm 3.260895e-03
+29.pgm  2.135162e-02
+310.pgm 1.376552e-02
+39.pgm  4.426816e-07
+</code></pre>
+                </section>
+
+                <section>
+                    <h2>Détermination du plan optimal</h2>
+                    <br/>
+                    <h4>Implémentation</h4>
+                    <pre><code data-trim contenteditable style="font-size: 18px; margin-top: 20px;">
+a1 = which.max(res$ind.sup$cos2[i,])
+a2 = which.max((res$ind.sup$cos2[i,])[-a1])
+if(a2>=a1){
+a2 = a2+1
+}
+</code></pre>
+                </section>
+
+
+                <section>
+                    <h2>Résultats</h2>
+                </section>
+
+                <section>
+                    <p class="image">
+                        <img height="450" src="img/plot-p1/plot-p1-page-003.jpg">
+                        <img height="450" src="img/plot-p1/plot-p1-page-004.jpg">
+                    </p>
+                </section>
+
+                <section>
+                    <p class="image">
+                        <img height="450" src="img/plot-p1/plot-p1-page-005.jpg">
+                        <img height="450" src="img/plot-p1/plot-p1-page-006.jpg">
+                    </p>
+                </section>
+
+                <section>
+                    <p class="image">
+                        <img height="450" src="img/plot-p1/plot-p1-page-007.jpg">
+                        <img height="450" src="img/plot-p1/plot-p1-page-008.jpg">
+                    </p>
+                </section>
+
+                <section>
+                    <p class="image">
+                        <img height="450" src="img/plot-p1/plot-p1-page-009.jpg">
+                        <img height="450" src="img/plot-p1/plot-p1-page-010.jpg">
+                    </p>
+                </section>
+
+                <section>
+                    <p class="image">
+                        <img height="450" src="img/plot-p1/plot-p1-page-011.jpg">
+                        <img height="450" src="img/plot-p1/plot-p1-page-012.jpg">
+                    </p>
+                </section>
+
+                <section>
+                    <p class="image">
+                        <img height="450" src="img/plot-p1/plot-p1-page-013.jpg">
+                        <img height="450" src="img/plot-p1/plot-p1-page-014.jpg">
+                    </p>
+                </section>
+
+                <section>
+                    <h2>Problème 2</h2>
+                    <p>Classification Ascendante Hiérarchique.</p>
+                </section>
+
+                <section>
+                    <h3>Algorithme</h3>
+                    <ol>
+                        <li class="fragment">Préparer les données</li>
+                        <li class="fragment">Réaliser une ACP</li>
+                        <li class="fragment">Réaliser une CAH dans le sous espace principal</li>
+                        <li class="fragment">Isoler le premier groupe non singleton dont l'individu fait parti</li>
+                    </ol>
+                </section>
+
+                <section>
+                    <h2>Réalisation de la CAH</h2>
+                    <h3>Choix de la metrique</h3>
+                    <p>
+                        La distance euclidienne à été retenue.
+                    </p>
+                </section>
+
+                <section>
+                    <h2>Réalisation de la CAH</h2>
+                    <br/>
+                    <h3>Choix de la methode d'aggregation: Ward</h3>
+                    <ul>
+                        <li>
+                            Avantage:
+                            <ul>
+                                <li>
+                                    Il s'agit d'une optimisation
+                                    pas-a-pas, qui ne dépend pas 
+                                    d'un choix initial arbitraire
+                                </li>
+                            </ul>
+                        </li>
+                        <li>
+                            Inconvénients:
+                            <ul>
+                                <li>Tourne lentement</li>
+                                <li>Sensible aux valeurs extrêmes</li>
+                            </ul>
+                        </li>
+                    </ul>
+                </section>
+
+               <section>
+                    <h2>Implémentation</h2>
+                    <br/>
+                    <pre><code data-trim contenteditable style="font-size: 18px; margin-top: 20px;">
+hc = hclust(dist(coords, method = d_meth), h_meth)
+
+m = NULL
+for( h in hc$height){
+    tree = cutree(hc, h = h)
+    n = 0
+    m = NULL
+    for( j in names(tree) ){
+        if(tree[j] == tree[label]){
+            m = cbind(m, matrix(data[j,], 91, 91, FALSE))
+            n = n + 1
+        }
+    }
+    if(n > 1) {
+        break
+    }
+}
+</code></pre>
+                </section>
+                
+                <section>
+                    <h2>Résultats</h2>
+                </section>
+
+                <section>
+                    <p class="image">
+                        <img height="450" src="img/plot-p2/plot-p2-page-002.jpg">
+                        <img height="450" src="img/plot-p2/plot-p2-page-003.jpg">
+                    </p>
+                </section>
+
+                <section>
+                    <p class="image">
+                        <img height="450" src="img/plot-p2/plot-p2-page-004.jpg">
+                        <img height="450" src="img/plot-p2/plot-p2-page-005.jpg">
+                    </p>
+                </section>
+
+                <section>
+                    <p class="image">
+                        <img height="450" src="img/plot-p2/plot-p2-page-006.jpg">
+                        <img height="450" src="img/plot-p2/plot-p2-page-007.jpg">
+                    </p>
+                </section>
+
+                <section>
+                    <p class="image">
+                        <img height="450" src="img/plot-p2/plot-p2-page-008.jpg">
+                        <img height="450" src="img/plot-p2/plot-p2-page-009.jpg">
+                    </p>
+                </section>
+
+                <section>
+                    <p class="image">
+                        <img height="450" src="img/plot-p2/plot-p2-page-010.jpg">
+                        <img height="450" src="img/plot-p2/plot-p2-page-011.jpg">
+                    </p>
+                </section>
+
+                <section>
+                    <p class="image">
+                        <img height="450" src="img/plot-p2/plot-p2-page-012.jpg">
+                        <img height="450" src="img/plot-p2/plot-p2-page-013.jpg">
+                    </p>
+                </section>
+
+                <section>
+                    <h2>Conclusion</h2>
+                </section>
+
+                <section>
+                    <h1>FIN</h1>
+                    <h3>par Marc DIJOUX</h3>
+                </section>
+
+            </div>
+
+        </div>
+
+        <script src="lib/js/head.min.js"></script>
+        <script src="js/reveal.min.js"></script>
+
+        <script>
+
+            // Full list of configuration options available here:
+            // https://github.com/hakimel/reveal.js#configuration
+            Reveal.initialize({
+                controls: true,
+                progress: true,
+                history: true,
+                center: true,
+
+                theme: Reveal.getQueryHash().theme, // available themes are in /css/theme
+                transition: Reveal.getQueryHash().transition || 'default', // default/cube/page/concave/zoom/linear/fade/none
+
+                // Parallax scrolling
+                // parallaxBackgroundImage: 'https://s3.amazonaws.com/hakim-static/reveal-js/reveal-parallax-1.jpg',
+                // parallaxBackgroundSize: '2100px 900px',
+
+                // Optional libraries used to extend on reveal.js
+                dependencies: [
+                    { src: 'lib/js/classList.js', condition: function() { return !document.body.classList; } },
+                    { src: 'plugin/markdown/marked.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+                    { src: 'plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+                    { src: 'plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } },
+                    { src: 'plugin/zoom-js/zoom.js', async: true, condition: function() { return !!document.body.classList; } },
+                    { src: 'plugin/notes/notes.js', async: true, condition: function() { return !!document.body.classList; } }
+                ]
+            });
+
+        </script>
+    </body>
+</html>
