@@ -88,18 +88,19 @@ for(i in 1:dim(test_data)[1]){
     plot(hc, hang=-1, main=title)
     
     
-    cl = NULL
+    #Récolte des visages de la classe
+    m = NULL
     #Pour chaque aggregation
     for( h in hc$height){
         #on recupère les classes
         tree = cutree(hc, h = h)
 
         n = 0
-        cl = NULL
+        m = NULL
         #pour chaque elements de l'etape
         for( j in names(tree) ){
             if(tree[j] == tree[label]){
-                cl = cbind(cl, j)
+                m = cbind(m, matrix(data[j,], 91, 91, FALSE))
                 n = n + 1
             }
         }
@@ -107,11 +108,8 @@ for(i in 1:dim(test_data)[1]){
             break
         }
     }
-    m = NULL
-    for( e in cl){     
-        #On affiche le visage de test à gauche du visage identifié
-        m = cbind(m, matrix(data[e,], 91, 91, FALSE))
-    }
-    plot(pixmapGrey(m, dim(m)[1], dim(m)[2]))
+
+    #On affiche les visages de la classe
+    plot(pixmapGrey(m, dim(m)[1], dim(m)[2]), main=label)
 }
 
