@@ -62,6 +62,7 @@ res = PCA(data, ind.sup=ind_sup, scale.unit=FALSE, ncp=e1$ncp, graph=F)
 h_meth = "ward"
 d_meth = "euclidean"
 
+
 hc = hclust(dist(res$ind$coord, method = d_meth), h_meth)
 title = paste0("Dendrogram: d_meth: ", d_meth,  " h_meth: ", h_meth, " ncp: ", e1$ncp)
 plot(hc, hang=-1, main=title)
@@ -77,8 +78,8 @@ for(i in 1:dim(test_data)[1]){
         a2 = a2+1
     }
     
-    ind = res$ind$coord[,c(a1,a2)]
-    ind_sup = c(res$ind.sup$coord[i,c(a1,a2)])
+    ind = res$ind$coord[,]
+    ind_sup = c(res$ind.sup$coord[i,])
     coords = rbind(ind,ind_sup)
     rownames(coords)[dim(coords)[1]] = rownames(data)[i_data]
     label = rownames(data)[i_data]
